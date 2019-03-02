@@ -54,7 +54,8 @@ class Student(SchoolMember):
     def pay_tuition(self, amount):
         print('student [%s] has just paied [%s]' % (self.name, amount))
         self.amount += amount
-        
+
+'''
 t1 = Teacher('Wusir', 28, 'M', 3000, 'python')
 t1.tell()
 s1 = Student('haitao', 38, 'M', 'python', 30000)
@@ -64,3 +65,4 @@ print(SchoolMember.member)
 del s2
  
 print(SchoolMember.member)
+'''

@@ -15,5 +15,7 @@ data = cifar10.load_data()
 
 for i in range(1000):
     print(y_train[i])
-    cv2.imshow("mnist", x_train[i])
-    cv2.waitKey(2000)
+    cv2.imshow("cifar10", x_train[i])
+    cv2.waitKey(1000)
+
+cv2.destroyAllWindows()

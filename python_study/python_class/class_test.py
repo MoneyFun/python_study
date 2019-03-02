@@ -9,6 +9,7 @@ Created on Sat Feb 16 19:10:19 2019
 class var():
     value = 1
 
+'''
 instance1=var()
 print(var.value)
 print(instance1.value)
@@ -21,3 +22,4 @@ print(instance1.value)
 var.value = 7
 print(var.value)
 print(instance1.value)
+'''

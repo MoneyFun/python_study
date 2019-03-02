@@ -1,0 +1,12 @@
+*.jpg
+*.jpeg
+*.wav
+*.txt
+*.ts
+*.png
+*.csv
+*.npy
+*.npz
+*.mp3
+*~
+*.pyc
