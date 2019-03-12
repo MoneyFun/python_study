@@ -26,16 +26,16 @@ print(INPUT_FEATURE_LENGTH)
 
 print(input_dict)
 
-encoder_input = np.zeros((1,INUPT_LENGTH,INPUT_FEATURE_LENGTH))
+encoder_input = np.zeros((1,INUPT_LENGTH))
 
 
 encoder_infer = load_model("encoder_infer.h5")
 decoder_infer = load_model("decoder_infer.h5")
 
 
-def predict_chinese(source,encoder_inference, decoder_inference, n_steps, features):
+def predict_chinese(source, encoder_inference, decoder_inference, n_steps, features):
     for char_index, char in enumerate(source):
-        encoder_input[0,char_index,input_dict[char]] = 1
+        encoder_input[0,char_index] = input_dict[char]
     #先通过推理encoder获得预测输入序列的隐状态
     state = encoder_inference.predict(encoder_input)
     #第一个字符'\t',为起始标志
@@ -60,7 +60,8 @@ def predict_chinese(source,encoder_inference, decoder_inference, n_steps, featur
     return output
 
 input_str = "I am your father."
-out = predict_chinese(input_str,encoder_infer,decoder_infer,OUTPUT_LENGTH,OUTPUT_FEATURE_LENGTH)
+out = predict_chinese(input_str, encoder_infer, decoder_infer, OUTPUT_LENGTH,
+                      OUTPUT_FEATURE_LENGTH)
 #print(input_texts[i],'\n---\n',target_texts[i],'\n---\n',out)
 print(input_str)
 print(out)
