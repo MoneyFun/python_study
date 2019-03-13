@@ -10,7 +10,28 @@ from keras.models import load_model
 import numpy as np
 
 import pickle
+import re
 
+
+def clean_str_to_list(string):
+    #string = re.sub(r"[^A-Za-z0-9(),!?\']", " ", string)
+    string = re.sub(r"n\'t", " n\'", string) #don't -> do n't(do not)
+    string = re.sub(r"\'s", " \'s", string) #It's -> It 's(It is or It has)
+    string = re.sub(r"\'ve", " \'ve", string) #I've -> I 've(I have)
+    string = re.sub(r"\'re", " \'re", string) #You're -> You 're(You are)
+    string = re.sub(r"\'d", " \'d", string) #I'd (like to) -> I 'd(I had)
+    string = re.sub(r"\'ll", " \'ll", string) #I'll -> I 'll(I will)
+    string = re.sub(r"\.", " . ", string) #',' -> ' , '
+    string = re.sub(r",", " , ", string) #',' -> ' , '
+    string = re.sub(r"!", " ! ", string) #'!' -> ' ! '
+    string = re.sub(r"\(", " ( ", string) #'(' -> ' ( '
+    string = re.sub(r"\)", " ) ", string) #')' -> ' ) '
+    string = re.sub(r"\?", " ? ", string) #'?' -> ' ? '
+    sentense=[]
+    for word in string.split(" "):
+        if word.strip():
+             sentense.append(word)
+    return sentense
 
 input_dict = pickle.load(open('input_dict.pkl', 'rb'))
 target_dict = pickle.load(open('target_dict.pkl', 'rb'))
@@ -34,13 +55,29 @@ decoder_infer = load_model("decoder_infer.h5")
 
 
 def predict_chinese(source, encoder_inference, decoder_inference, n_steps, features):
+    source = clean_str_to_list(source)
     for char_index, char in enumerate(source):
         encoder_input[0,char_index] = input_dict[char]
+
     #先通过推理encoder获得预测输入序列的隐状态
     state = encoder_inference.predict(encoder_input)
     #第一个字符'\t',为起始标志
     predict_seq = np.zeros((1,1,features))
     predict_seq[0,0,target_dict['\t']] = 1
+
+    print(state)
+    print(type(state))
+    print(len(state))
+
+    print(predict_seq)
+    print([predict_seq])
+    print(type(predict_seq))
+    print(type([predict_seq]))
+
+    c = [predict_seq]+state
+    print(c)
+    print(type(c))
+    print(len(c))
 
     output = ''
     #开始对encoder获得的隐状态进行推理
@@ -59,7 +96,7 @@ def predict_chinese(source, encoder_inference, decoder_inference, n_steps, featu
             break
     return output
 
-input_str = "I am your father."
+input_str = "Do you remember?"
 out = predict_chinese(input_str, encoder_infer, decoder_infer, OUTPUT_LENGTH,
                       OUTPUT_FEATURE_LENGTH)
 #print(input_texts[i],'\n---\n',target_texts[i],'\n---\n',out)

@@ -12,6 +12,7 @@ from keras.models import Model
 
 import pandas as pd
 import numpy as np
+import re
 
 import pickle
 
@@ -60,6 +61,49 @@ def create_model(input_length, n_input,n_output,n_units):
 
     return model, encoder_infer, decoder_infer
 
+def build_covab(articles):
+    d = {}  # {'word' : num}
+    for article in articles:
+        for word in article:
+            if word in d:
+                d[word] += 1
+            else:
+                d[word] = 1
+    s = sorted(d.items(), key=lambda x:x[1], reverse=True) #降序
+
+#   计算最佳词典长度
+#    s_n = [x[1] for x in s]
+#    s_n = s_n[1:]  #去掉<pad>
+#    s_n = np.asarray(s_n)
+#    print("s_n.mean",s_n.mean())
+#    print(s_n[int(len(s_n)*0.3)])  #取出所有词中频率最高的词的前30%，DEBUG_MODE中出现了2次
+#    print(int(len(s_n)*0.3))  #9066  #VOCAB_SIZE = 9000
+
+    s_w = [x[0] for x in s]
+    word2int = {v : k + 1 for k, v in enumerate(s_w)}
+    int2word = {k + 1 : v for k, v in enumerate(s_w)}
+    return word2int, int2word
+
+def clean_str_to_list(string):
+    #string = re.sub(r"[^A-Za-z0-9(),!?\']", " ", string)
+    string = re.sub(r"n\'t", " n\'", string) #don't -> do n't(do not)
+    string = re.sub(r"\'s", " \'s", string) #It's -> It 's(It is or It has)
+    string = re.sub(r"\'ve", " \'ve", string) #I've -> I 've(I have)
+    string = re.sub(r"\'re", " \'re", string) #You're -> You 're(You are)
+    string = re.sub(r"\'d", " \'d", string) #I'd (like to) -> I 'd(I had)
+    string = re.sub(r"\'ll", " \'ll", string) #I'll -> I 'll(I will)
+    string = re.sub(r"\.", " . ", string) #',' -> ' , '
+    string = re.sub(r",", " , ", string) #',' -> ' , '
+    string = re.sub(r"!", " ! ", string) #'!' -> ' ! '
+    string = re.sub(r"\(", " ( ", string) #'(' -> ' ( '
+    string = re.sub(r"\)", " ) ", string) #')' -> ' ) '
+    string = re.sub(r"\?", " ? ", string) #'?' -> ' ? '
+    sentense=[]
+    for word in string.split(" "):
+        if word.strip():
+             sentense.append(word)
+    return sentense
+
 N_UNITS = 256
 BATCH_SIZE = 64
 EPOCH = 100
@@ -75,10 +119,20 @@ df['targets'] = df['targets'].apply(lambda x: '\t'+x+'\n')
 input_texts = df.inputs.values.tolist()
 target_texts = df.targets.values.tolist()
 
-input_characters = sorted(list(set(df.inputs.unique().sum())))
+input_words = []
+for i in range(len(input_texts)):
+    input_words.append(clean_str_to_list(input_texts[i]))
+
+target_texts = [i.strip() for i in target_texts]
+#print(input_texts)
+#print(target_texts)
+
+#print(input_words)
+
+#input_characters = sorted(list(set(df.inputs.unique().sum())))
 target_characters = sorted(list(set(df.targets.unique().sum())))
 
-INUPT_LENGTH = max([len(i) for i in input_texts])
+INUPT_LENGTH = max([len(i) for i in input_words])
 OUTPUT_LENGTH = max([len(i) for i in target_texts])
 
 OUTPUT_FEATURE_LENGTH = len(target_characters)
@@ -87,11 +141,15 @@ encoder_input = np.zeros((NUM_SAMPLES,INUPT_LENGTH))
 decoder_input = np.zeros((NUM_SAMPLES,OUTPUT_LENGTH,OUTPUT_FEATURE_LENGTH))
 decoder_output = np.zeros((NUM_SAMPLES,OUTPUT_LENGTH,OUTPUT_FEATURE_LENGTH))
 
-input_dict = dict((char,index + 1) for index,char in enumerate(input_characters))
-print(input_dict)
-input_dict_reverse = dict((index + 1,char) for index,char in enumerate(input_characters))
+#input_dict = dict((char,index + 1) for index,char in enumerate(input_characters))
+#print(input_dict)
+#input_dict_reverse = dict((index + 1,char) for index,char in enumerate(input_characters))
+input_dict, input_dict_reverse = build_covab(input_words)
+#print(input_dict[:10])
+#print(input_dict_reverse[:10])
+
 target_dict = {char:index for index,char in enumerate(target_characters)}
-print(target_dict)
+#print(target_dict)
 target_dict_reverse = {index:char for index,char in enumerate(target_characters)}
 
 INPUT_FEATURE_LENGTH = len(input_dict) + 1
@@ -116,7 +174,7 @@ with open("target_dict.pkl", "wb") as f:
 with open("target_dict_reverse.pkl", "wb") as f:
     pickle.dump(target_dict_reverse, f)
 
-for seq_index,seq in enumerate(input_texts):
+for seq_index,seq in enumerate(input_words):
     for char_index, char in enumerate(seq):
         encoder_input[seq_index,char_index] = input_dict[char]
 
